@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tableau de bord du mobile money au Tchad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="data.js"></script>
+<style>
+:root{
+  --ink:#10233D;
+  --ink-2:#182F4D;
+  --paper:#F0F2F1;
+  --card:#FFFFFF;
+  --gold:#C99A3B;
+  --gold-deep:#A97F28;
+  --brick:#A6432F;
+  --blue:#2B5C86;
+  --text:#16202B;
+  --muted:#5B6773;
+  --line:#DDE1E0;
+  --radius:10px;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--text);
+  font-family:'IBM Plex Sans',sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:'IBM Plex Mono',monospace;}
+h1,h2,h3,.display{font-family:'Fraunces',serif;}
+a{color:inherit;}
+
+/* ---------- header ---------- */
+header.site{
+  background:var(--ink);
+  color:#EDEFEC;
+  position:sticky; top:0; z-index:50;
+  border-bottom:1px solid #2A3F5C;
+}
+.header-inner{
+  max-width:1240px;margin:0 auto;padding:16px 28px;
+  display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;
+}
+.brand-text h1{font-size:17px;margin:0;font-weight:600;color:#fff;letter-spacing:-.005em;}
+.context-btn{
+  font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:600;
+  background:transparent;color:#EDEFEC;border:1px solid #3C5470;border-radius:6px;
+  padding:6px 14px;cursor:pointer;transition:.15s;text-decoration:none;display:inline-block;
+}
+.context-btn:hover{background:var(--gold);border-color:var(--gold);color:var(--ink);}
+.context-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+
+/* ---------- hero ---------- */
+.hero{max-width:1240px;margin:0 auto;padding:56px 28px 40px;}
+.hero-kicker{font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);font-weight:600;margin:0 0 10px;}
+.hero h2{font-size:clamp(26px,3.4vw,38px);line-height:1.15;margin:0 0 14px;max-width:820px;font-weight:500;}
+.hero p.lede{color:var(--muted);max-width:640px;font-size:15.5px;line-height:1.6;margin:0 0 34px;}
+
+.kpi-row{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+@media(max-width:720px){.kpi-row{grid-template-columns:1fr;}}
+.kpi{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:28px 30px;position:relative;overflow:hidden;
+}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;}
+.kpi.n1::before{background:var(--blue);}
+.kpi.n2::before{background:var(--gold-deep);}
+.kpi .label{font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:10px;}
+.kpi .value{font-family:'Fraunces',serif;font-size:clamp(34px,4.2vw,50px);font-weight:600;line-height:1;letter-spacing:-.01em;}
+.kpi .value .unit{font-size:0.42em;font-weight:500;color:var(--muted);letter-spacing:0;margin-left:2px;}
+.kpi .sub{margin-top:10px;color:var(--muted);font-size:13.5px;word-break:break-word;}
+.kpi .sub .mono{color:var(--text);font-weight:500;}
+
+/* ---------- sections ---------- */
+section{max-width:1240px;margin:0 auto;padding:54px 28px;}
+section.alt{background:var(--card);border-top:1px solid var(--line);border-bottom:1px solid var(--line);max-width:none;padding-left:0;padding-right:0;}
+section.alt > .inner{max-width:1240px;margin:0 auto;padding:54px 28px;}
+.section-head{display:flex;align-items:baseline;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:8px;}
+.section-num{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--gold-deep);letter-spacing:.06em;font-weight:600;}
+.section-head h2{font-size:26px;margin:4px 0 6px;font-weight:500;}
+.section-desc{color:var(--muted);font-size:14.5px;max-width:640px;margin:0 0 30px;line-height:1.55;}
+
+.geo-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:34px;}
+@media(max-width:980px){.geo-cards{grid-template-columns:1fr 1fr;}}
+@media(max-width:560px){.geo-cards{grid-template-columns:1fr;}}
+.geo-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;}
+.geo-card .title{font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;}
+.geo-card .num{font-family:'Fraunces',serif;font-size:26px;margin:8px 0 4px;font-weight:600;}
+.geo-card .amt{font-size:13px;color:var(--muted);}
+.geo-card .amt .mono{color:var(--text);}
+
+/* ---------- table ---------- */
+table.types{width:100%;border-collapse:collapse;margin-top:10px;font-size:14.5px;}
+table.types th{
+  text-align:left;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+  border-bottom:2px solid var(--ink);padding:0 12px 10px;font-weight:600;
+}
+table.types td{padding:14px 12px;border-bottom:1px solid var(--line);vertical-align:middle;}
+table.types tr:hover td{background:#F7F8F7;}
+table.types td.num{font-family:'IBM Plex Mono',monospace;text-align:right;white-space:nowrap;}
+table.types .bar-cell{width:220px;}
+.bar-track{background:#E7EAE8;border-radius:4px;height:8px;width:100%;overflow:hidden;}
+.bar-fill{height:100%;background:var(--blue);border-radius:4px;}
+.type-name{font-weight:600;}
+th.num-h{text-align:right;}
+
+/* ---------- charts / maps ---------- */
+.chart-card, .map-card{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:26px;margin-top:10px;
+}
+.two-col{display:grid;grid-template-columns:1fr;gap:34px;}
+canvas#hourChart{max-height:340px;}
+#regionMap, #flowMap{height:520px;border-radius:8px;overflow:hidden;border:1px solid var(--line);}
+.map-legend{display:flex;align-items:center;gap:14px;margin-top:16px;font-size:12.5px;color:var(--muted);flex-wrap:wrap;}
+.map-legend .swatch{width:14px;height:14px;border-radius:3px;display:inline-block;margin-right:6px;vertical-align:-2px;}
+.leaflet-tooltip.custom-tip{
+  font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;border-radius:8px;border:1px solid var(--line);
+  box-shadow:0 6px 18px rgba(16,35,61,.14);padding:10px 12px;line-height:1.5;
+}
+.tip-title{font-weight:700;font-size:13px;margin-bottom:4px;color:var(--ink);}
+.tip-row{display:flex;justify-content:space-between;gap:14px;}
+.tip-row span:last-child{font-family:'IBM Plex Mono',monospace;font-weight:600;}
+
+.hint{font-size:12.5px;color:var(--muted);margin-top:14px;}
+
+.filter-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.filter-row label{font-size:13px;font-weight:600;color:var(--text);}
+.filter-row select{
+  font-family:'IBM Plex Sans',sans-serif;font-size:13.5px;padding:7px 10px;border-radius:7px;
+  border:1px solid var(--line);background:var(--card);color:var(--text);min-width:200px;
+}
+.filter-row select:focus{outline:2px solid var(--blue);outline-offset:1px;}
+
+/* ---------- footer ---------- */
+footer{
+  background:var(--ink);color:#B9C4D1;padding:34px 28px;font-size:13px;
+}
+.footer-inner{max-width:1240px;margin:0 auto;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+footer a{color:#EDEFEC;text-decoration:underline;text-underline-offset:3px;}
+
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto;}
+  *{transition:none !important; animation:none !important;}
+}
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="header-inner">
+    <div class="brand-text">
+      <h1>Tableau de bord du mobile money au Tchad</h1>
+    </div>
+    <a id="contextBtn" class="context-btn" href="contexte.html">Contexte</a>
+  </div>
+</header>
+
+<section class="hero" id="apercu">
+  <h2>Analyse des flux de transactions d'avril 2024</h2>
+  <p class="lede">Cet état des lieux s'appuie sur les données transactionnelles de <strong>Moov Money</strong>, le principal opérateur de mobile money du pays.</p>
+
+  <div class="kpi-row">
+    <div class="kpi n1">
+      <div class="label">Transactions enregistrées</div>
+      <div class="value mono" id="kpiNb">0</div>
+      <div class="sub">Toutes catégories d'agents et de comptes confondues</div>
+    </div>
+    <div class="kpi n2">
+      <div class="label">Montant total transigé</div>
+      <div class="value"><span class="mono" id="kpiAmtBillions">0</span><span class="unit"> Md FCFA</span></div>
+      <div class="sub">soit <span id="kpiAmt" class="mono"></span> FCFA au total</div>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="geoloc">
+  <div class="inner">
+    <div class="section-head">
+      <div>
+        <h2>Géolocalisation des transactions</h2>
+      </div>
+    </div>
+    <p class="section-desc">Chaque transaction est classée dans une seule des quatre catégories ci-dessous, selon que son point de débit et/ou son point de crédit ont pu être rattachés à une position géographique.</p>
+
+    <div class="geo-cards" id="geoCards"></div>
+  </div>
+</section>
+
+<section id="types">
+  <div class="section-head">
+    <div>
+      <h2>Types de transactions</h2>
+    </div>
+  </div>
+  <p class="section-desc">Les 10 types de transactions les plus fréquents en nombre, sur les 35 types recensés.</p>
+
+  <div class="chart-card">
+    <table class="types">
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Nb. transactions</th>
+          <th class="num-h">% nb.</th>
+          <th class="num-h">Montant (M FCFA)</th>
+          <th class="num-h">% montant</th>
+        </tr>
+      </thead>
+      <tbody id="typesBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="alt" id="temporel">
+  <div class="inner">
+    <div class="section-head">
+      <div>
+        <h2>Répartition horaire des transactions</h2>
+      </div>
+    </div>
+    <p class="section-desc">Volume de transactions par heure de la journée. Les heures ouvrées concentrent l'essentiel du montant transigé.</p>
+    <div class="chart-card">
+      <canvas id="hourChart"></canvas>
+    </div>
+  </div>
+</section>
+
+<section id="territoire">
+  <div class="section-head">
+    <div>
+      <h2>Volume des transactions par province</h2>
+    </div>
+  </div>
+  <p class="section-desc">Chaque province est colorée selon le volume total transigé (débit + crédit). Survolez une province pour le détail débit / crédit.</p>
+  <div class="map-card">
+    <div id="regionMap"></div>
+    <div class="map-legend" id="regionLegend"></div>
+    <p class="hint">Les transactions non rattachables à une province ("Unknown", 22,5 Md FCFA) ne sont pas représentées sur la carte.</p>
+  </div>
+</section>
+
+<section class="alt" id="flux">
+  <div class="inner">
+    <div class="section-head">
+      <div>
+        <h2>Flux de transactions entre villes</h2>
+      </div>
+    </div>
+    <p class="section-desc">Les 200 corridors débit → crédit les plus importants en montant, sur les 3 786 corridors recensés. L'épaisseur du trait indique le montant du corridor ; la taille des points indique le volume total de la ville (débit + crédit).</p>
+    <div class="map-card">
+      <div class="filter-row">
+        <label for="citySelect">Filtrer par ville</label>
+        <select id="citySelect">
+          <option value="">Toutes les villes</option>
+        </select>
+        <span id="cityFilterInfo" class="hint" style="margin:0;"></span>
+      </div>
+      <div id="flowMap"></div>
+      <div class="map-legend" style="margin-bottom:4px;">
+        <span><span class="swatch" style="background:var(--ink-2);border-radius:50%"></span>Ville (taille ∝ volume total débit + crédit)</span>
+      </div>
+      <div class="map-legend" id="flowWidthLegend"></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <span>Analyse et tableau de bord réalisés à partir du travail de Haoua Ben Ali Abbo, mené au sein du Secrétariat Général du Comité National Économique et Financier, à la Direction Nationale de la BEAC de N'Djamena. Données transactionnelles fournies par Moov Money Tchad, que nous remercions.</span>
+    <span><a href="contexte.html">En savoir plus sur le contexte du projet</a></span>
+  </div>
+</footer>
+
+<script>
+/* ---------------- helpers ---------------- */
+const fmt = new Intl.NumberFormat('fr-FR');
+const fmt1 = new Intl.NumberFormat('fr-FR',{maximumFractionDigits:1,minimumFractionDigits:1});
+const fmt2 = new Intl.NumberFormat('fr-FR',{maximumFractionDigits:2,minimumFractionDigits:2});
+
+function animateCount(el, target, opts={}){
+  const dur = opts.duration || 1400;
+  const isMoney = !!opts.money;
+  const start = performance.now();
+  function tick(now){
+    const p = Math.min(1,(now-start)/dur);
+    const eased = 1-Math.pow(1-p,3);
+    const val = target*eased;
+    el.textContent = isMoney ? fmt.format(Math.round(val)) : fmt.format(Math.round(val));
+    if(p<1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+/* ---------------- Bloc 1 : KPI ---------------- */
+document.getElementById('kpiAmt').textContent = fmt.format(DATA.kpi.montant_total) + ' FCFA';
+document.getElementById('kpiAmtBillions').textContent = fmt2.format(DATA.kpi.montant_total/1e9);
+animateCount(document.getElementById('kpiNb'), DATA.kpi.nb_transactions);
+
+/* ---------------- Bloc 2 : Géolocalisation ---------------- */
+(function(){
+  // DATA.geoloc contient des ensembles non-exclusifs (ex: "débit" inclut les
+  // transactions géolocalisées aux deux). On reconstruit ici 4 catégories
+  // mutuellement exclusives qui s'additionnent à 100% du total.
+  const byKey = Object.fromEntries(DATA.geoloc.map(d=>[d.key,d]));
+  const both = byKey.both;
+  const exclusive = [
+    {key:'debit', label:'Géolocalisées au débit', nb: byKey.debit.nb - both.nb, montant: byKey.debit.montant - both.montant},
+    {key:'credit', label:'Géolocalisées au crédit', nb: byKey.credit.nb - both.nb, montant: byKey.credit.montant - both.montant},
+    {key:'both', label:'Géolocalisées au débit et au crédit', nb: both.nb, montant: both.montant},
+    {key:'none', label:'Non géolocalisées', nb: byKey.none.nb, montant: byKey.none.montant},
+  ];
+  const cards = document.getElementById('geoCards');
+  exclusive.forEach(d=>{
+    const card = document.createElement('div');
+    card.className = 'geo-card';
+    card.innerHTML = `
+      <div class="title">${d.label}</div>
+      <div class="num mono">${fmt.format(d.nb)}</div>
+      <div class="amt">montant : <span class="mono">${fmt.format(Math.round(d.montant))}</span> FCFA</div>`;
+    cards.appendChild(card);
+  });
+})();
+
+/* ---------------- Bloc 3 : Types ---------------- */
+(function(){
+  const body = document.getElementById('typesBody');
+  const maxNb = Math.max(...DATA.types.map(t=>t.nb));
+
+  function rowHTML(t){
+    const pct = (t.nb/maxNb*100).toFixed(1);
+    return `
+      <td class="type-name">${t.type}</td>
+      <td class="bar-cell">
+        <div class="mono" style="font-size:13.5px;margin-bottom:4px;">${fmt.format(t.nb)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+      </td>
+      <td class="num mono">${fmt1.format(t.prop_nb)}%</td>
+      <td class="num mono">${fmt.format(Math.round(t.montant/1e6))}</td>
+      <td class="num mono">${fmt1.format(t.prop_montant)}%</td>`;
+  }
+
+  DATA.types.forEach(t=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = rowHTML(t);
+    body.appendChild(tr);
+  });
+})();
+
+/* ---------------- Bloc 4a : Histogramme horaire ---------------- */
+(function(){
+  const ctx = document.getElementById('hourChart');
+  const labels = DATA.hours.map(h=>h.hour_text);
+  const nbData = DATA.hours.map(h=>h.nb);
+  const maxNb = Math.max(...nbData);
+  const colors = nbData.map(v => v===maxNb ? '#A6432F' : '#2B5C86');
+  new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels,
+      datasets:[{
+        label:'Nombre de transactions',
+        data:nbData,
+        backgroundColor:colors,
+        borderRadius:4,
+        maxBarThickness:26
+      }]
+    },
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          callbacks:{
+            label:function(c){
+              const h = DATA.hours[c.dataIndex];
+              return [
+                'Transactions : '+fmt.format(h.nb)+' ('+fmt1.format(h.prop_nb)+'%)',
+                'Montant : '+fmt.format(Math.round(h.montant_millions))+' M FCFA ('+fmt1.format(h.prop_montant)+'%)'
+              ];
+            }
+          }
+        }
+      },
+      scales:{
+        x:{grid:{display:false}, ticks:{maxRotation:60,minRotation:60,font:{size:10.5}}},
+        y:{grid:{color:'#E7EAE8'}, ticks:{callback:v=>fmt.format(v)}}
+      }
+    }
+  });
+})();
+
+/* ---------------- Bloc 4b : Carte par province (choroplèthe) ---------------- */
+(function(){
+  const map = L.map('regionMap',{scrollWheelZoom:false}).setView([13.4,18.9],5.6);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',{
+    attribution:'&copy; OpenStreetMap &copy; CARTO', maxZoom:9
+  }).addTo(map);
+
+  const values = DATA.geojson.features.map(f=>f.properties.volume_total_millions);
+  const minV = Math.min(...values), maxV = Math.max(...values);
+  function colorFor(v){
+    const t = (Math.log(v+1)-Math.log(minV+1))/(Math.log(maxV+1)-Math.log(minV+1));
+    // pale gold -> ink navy
+    const c1 = [230,214,171], c2 = [16,35,61];
+    const r = Math.round(c1[0]+(c2[0]-c1[0])*t);
+    const g = Math.round(c1[1]+(c2[1]-c1[1])*t);
+    const b = Math.round(c1[2]+(c2[2]-c1[2])*t);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  const layer = L.geoJSON(DATA.geojson,{
+    style:f=>({
+      fillColor: colorFor(f.properties.volume_total_millions),
+      fillOpacity:0.88,
+      color:'#F0F2F1',
+      weight:1
+    }),
+    onEachFeature:(f,lyr)=>{
+      const p = f.properties;
+      lyr.bindTooltip(`
+        <div class="tip-title">${p.Province}</div>
+        <div class="tip-row"><span>Transactions</span><span>${fmt.format(p.nb_total)}</span></div>
+        <div class="tip-row"><span>Volume total</span><span>${fmt.format(Math.round(p.volume_total_millions))} M FCFA</span></div>
+        <hr style="border:none;border-top:1px solid #E7EAE8;margin:6px 0;">
+        <div class="tip-row"><span>Entrant (débit)</span><span>${fmt.format(p.nb_debit)} · ${fmt.format(Math.round(p.montant_millions_debit))} M</span></div>
+        <div class="tip-row"><span>Sortant (crédit)</span><span>${fmt.format(p.nb_credit)} · ${fmt.format(Math.round(p.montant_millions_credit))} M</span></div>
+      `,{sticky:true, className:'custom-tip'});
+      lyr.on('mouseover',()=>lyr.setStyle({fillOpacity:1,weight:2,color:'#A6432F'}));
+      lyr.on('mouseout',()=>lyr.setStyle({fillOpacity:0.88,weight:1,color:'#F0F2F1'}));
+    }
+  }).addTo(map);
+
+  const legend = document.getElementById('regionLegend');
+  legend.innerHTML = `
+    <span><span class="swatch" style="background:rgb(230,214,171)"></span>Faible volume</span>
+    <span style="flex:1;max-width:160px;height:8px;border-radius:4px;background:linear-gradient(90deg, rgb(230,214,171), rgb(16,35,61));"></span>
+    <span><span class="swatch" style="background:rgb(16,35,61)"></span>Volume élevé (N'Djamena)</span>`;
+
+  map.fitBounds(layer.getBounds(), {padding:[10,10]});
+})();
+
+/* ---------------- Bloc 5 : Carte de flux ---------------- */
+(function(){
+  const map = L.map('flowMap',{scrollWheelZoom:false, zoomSnap:0.1}).setView([13.4,18.9],5.6);
+
+  // Fond de carte (identique à la carte des volumes), puis découpage administratif par-dessus
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',{
+    attribution:'&copy; OpenStreetMap &copy; CARTO', maxZoom:9
+  }).addTo(map);
+
+  const bgLayer = L.geoJSON(DATA.geojson,{
+    interactive:false,
+    style:{ fillColor:'#E3E7E6', fillOpacity:0.75, color:'#8E9997', weight:1.2 }
+  }).addTo(map);
+  map.fitBounds(bgLayer.getBounds(),{padding:[10,10]});
+  map.setMaxBounds(bgLayer.getBounds().pad(0.15));
+
+  function bezierPoints(p1,p2,curvature){
+    const [lat1,lon1]=p1, [lat2,lon2]=p2;
+    const mLat=(lat1+lat2)/2, mLon=(lon1+lon2)/2;
+    const dLat=lat2-lat1, dLon=lon2-lon1;
+    const dist = Math.sqrt(dLat*dLat+dLon*dLon);
+    const nx = -dLon, ny = dLat;
+    const norm = Math.sqrt(nx*nx+ny*ny) || 1;
+    const offset = dist*curvature;
+    const cLat = mLat + (ny/norm)*offset;
+    const cLon = mLon + (nx/norm)*offset;
+    const pts=[];
+    const steps=24;
+    for(let i=0;i<=steps;i++){
+      const t=i/steps;
+      const lat = (1-t)*(1-t)*lat1 + 2*(1-t)*t*cLat + t*t*lat2;
+      const lon = (1-t)*(1-t)*lon1 + 2*(1-t)*t*cLon + t*t*lon2;
+      pts.push([lat,lon]);
+    }
+    return pts;
+  }
+
+  const maxFlow = Math.max(...DATA.flows.map(f=>f.montant_millions));
+  function widthFor(v){ return (0.6 + (v/maxFlow)*5.5) * 3; }
+
+  const lineEntries = DATA.flows.map(f=>{
+    const w = widthFor(f.montant_millions);
+    const pts = bezierPoints([f.lat_d,f.lon_d],[f.lat_c,f.lon_c],0.18);
+    const line = L.polyline(pts,{color:'#A6432F', weight:w, opacity:0.55});
+    line.bindTooltip(`
+      <div class="tip-title">${f.debit_city} → ${f.credit_city}</div>
+      <div class="tip-row"><span>Transactions</span><span>${fmt.format(f.nb)}</span></div>
+      <div class="tip-row"><span>Montant</span><span>${fmt.format(Math.round(f.montant_millions))} M FCFA</span></div>
+    `,{sticky:true, className:'custom-tip'});
+    line.on('mouseover',()=>line.setStyle({opacity:1,color:'#D9A63D'}));
+    line.on('mouseout',()=>line.setStyle({opacity:0.55,color:'#A6432F'}));
+    line.addTo(map);
+    return {layer:line, debit:f.debit_city, credit:f.credit_city};
+  });
+
+  // Légende : épaisseur des corridors selon des tranches de montant
+  (function(){
+    const bins = [
+      {max:10,  label:'< 10 M FCFA',      sample:5},
+      {max:30,  label:'10 – 30 M FCFA',   sample:20},
+      {max:80,  label:'30 – 80 M FCFA',   sample:55},
+      {max:Infinity, label:'> 80 M FCFA', sample:Math.min(maxFlow, 220)},
+    ];
+    const legend = document.getElementById('flowWidthLegend');
+    const items = bins.map(b=>{
+      const w = widthFor(b.sample).toFixed(1);
+      return `<span style="display:inline-flex;align-items:center;gap:7px;">
+        <svg width="26" height="12" style="flex-shrink:0;"><line x1="1" y1="6" x2="25" y2="6" stroke="#A6432F" stroke-width="${w}" stroke-linecap="round"/></svg>
+        ${b.label}
+      </span>`;
+    }).join('');
+    legend.innerHTML = `<span style="color:var(--text);font-weight:600;">Montant du corridor :</span>` + items;
+  })();
+
+  const maxNode = Math.max(...DATA.nodes.map(n=>n.montant));
+  const nodeEntries = DATA.nodes.map(n=>{
+    const r = 3 + Math.sqrt(n.montant/maxNode)*14;
+    const marker = L.circleMarker([n.lat,n.lon],{
+      radius:r, color:'#EDEFEC', weight:1, fillColor:'#182F4D', fillOpacity:0.9
+    }).addTo(map);
+    marker.bindTooltip(`
+      <div class="tip-title">${n.city}</div>
+      <div class="tip-row"><span>Province</span><span>${n.region}</span></div>
+      <div class="tip-row"><span>Transactions</span><span>${fmt.format(n.nb)}</span></div>
+      <div class="tip-row"><span>Montant total</span><span>${fmt.format(Math.round(n.montant/1e6))} M FCFA</span></div>
+    `,{sticky:true, className:'custom-tip'});
+    return {layer:marker, city:n.city, baseRadius:r};
+  });
+
+  // ---- Filtre par ville : ne montrer que les corridors depuis/vers la ville choisie ----
+  const citySet = new Set();
+  DATA.flows.forEach(f=>{ citySet.add(f.debit_city); citySet.add(f.credit_city); });
+  const citySelect = document.getElementById('citySelect');
+  const cityFilterInfo = document.getElementById('cityFilterInfo');
+  [...citySet].sort((a,b)=>a.localeCompare(b,'fr')).forEach(city=>{
+    const opt = document.createElement('option');
+    opt.value = city; opt.textContent = city;
+    citySelect.appendChild(opt);
+  });
+
+  citySelect.addEventListener('change', ()=>{
+    const city = citySelect.value;
+    let shown = 0;
+    const involvedCities = new Set();
+    lineEntries.forEach(e=>{
+      const match = !city || e.debit===city || e.credit===city;
+      if(match){
+        if(!map.hasLayer(e.layer)) e.layer.addTo(map);
+        shown++;
+        involvedCities.add(e.debit);
+        involvedCities.add(e.credit);
+      } else if(map.hasLayer(e.layer)){
+        map.removeLayer(e.layer);
+      }
+    });
+    nodeEntries.forEach(e=>{
+      const isSelected = city && e.city===city;
+      const visible = !city || involvedCities.has(e.city);
+      if(visible){
+        if(!map.hasLayer(e.layer)) e.layer.addTo(map);
+        e.layer.setStyle({
+          fillOpacity: 0.9,
+          radius: isSelected ? e.baseRadius+3 : e.baseRadius,
+          color: isSelected ? '#D9A63D' : '#EDEFEC',
+          weight: isSelected ? 2 : 1
+        });
+      } else if(map.hasLayer(e.layer)){
+        map.removeLayer(e.layer);
+      }
+    });
+    cityFilterInfo.textContent = city ? `${shown} corridor(s) impliquant ${city}` : '';
+  });
+})();
+</script>
+</body>
+</html>
