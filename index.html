@@ -462,10 +462,11 @@ const JAWG_ATTRIBUTION = '<a href="https://jawg.io" target="_blank">&copy; Jawg<
 
 /* ---------------- Bloc 4b : Carte par province (choroplèthe) ---------------- */
 (function(){
-  const map = L.map('regionMap',{scrollWheelZoom:false}).setView([13.4,18.9],5.6);
+  const map = L.map('regionMap',{scrollWheelZoom:false}).setView([13.4,18.9],4.6);
   L.tileLayer(JAWG_TILE_URL,{
     attribution: JAWG_ATTRIBUTION, maxZoom:22
   }).addTo(map);
+  const values = DATA.geojson.features.map(f=>f.properties.prop_volume_total);
   const minV = Math.min(...values), maxV = Math.max(...values);
   function colorFor(v){
     const t = (Math.log(v+1)-Math.log(minV+1))/(Math.log(maxV+1)-Math.log(minV+1));
@@ -505,12 +506,12 @@ const JAWG_ATTRIBUTION = '<a href="https://jawg.io" target="_blank">&copy; Jawg<
     <span style="flex:1;max-width:160px;height:8px;border-radius:4px;background:linear-gradient(90deg, rgb(230,214,171), rgb(16,35,61));"></span>
     <span><span class="swatch" style="background:rgb(16,35,61)"></span>Volume élevé (N'Djamena)</span>`;
 
-  map.fitBounds(layer.getBounds(), {padding:[10,10]});
+  map.fitBounds(layer.getBounds(), {padding:[20,20]});
 })();
 
 /* ---------------- Bloc 5 : Carte de flux ---------------- */
 (function(){
-  const map = L.map('flowMap',{scrollWheelZoom:false, zoomSnap:0.1}).setView([13.4,18.9],5.6);
+  const map = L.map('flowMap',{scrollWheelZoom:false, zoomSnap:0.1}).setView([13.4,18.9],4.6);
 
   // Fond de carte (identique à la carte des volumes), puis découpage administratif par-dessus
   L.tileLayer(JAWG_TILE_URL,{
@@ -521,8 +522,8 @@ const JAWG_ATTRIBUTION = '<a href="https://jawg.io" target="_blank">&copy; Jawg<
     interactive:false,
     style:{ fillColor:'#E3E7E6', fillOpacity:0.75, color:'#8E9997', weight:1.2 }
   }).addTo(map);
-  map.fitBounds(bgLayer.getBounds(),{padding:[10,10]});
-  map.setMaxBounds(bgLayer.getBounds().pad(0.15));
+  map.fitBounds(bgLayer.getBounds(),{padding:[20,20]});
+  map.setMaxBounds(bgLayer.getBounds().pad(0.25));
 
   function bezierPoints(p1,p2,curvature){
     const [lat1,lon1]=p1, [lat2,lon2]=p2;
