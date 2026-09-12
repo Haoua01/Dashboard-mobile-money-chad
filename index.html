@@ -277,6 +277,10 @@ const fmt = new Intl.NumberFormat('fr-FR');
 const fmt1 = new Intl.NumberFormat('fr-FR',{maximumFractionDigits:1,minimumFractionDigits:1});
 const fmt2 = new Intl.NumberFormat('fr-FR',{maximumFractionDigits:2,minimumFractionDigits:2});
 
+const JAWG_ACCESS_TOKEN = 'xij7Z23tcHpKBmY9koREFikvy8u3GEZESw07s3q2xY3H1nNPbOFJvlFistpBHO7D';
+const JAWG_TILE_URL = `https://tile.jawg.io/jawg-light/{z}/{x}/{y}{r}.png?access-token=${JAWG_ACCESS_TOKEN}`;
+const JAWG_ATTRIBUTION = '<a href="https://jawg.io" target="_blank">&copy; Jawg</a> - <a href="https://www.openstreetmap.org" target="_blank">&copy; OpenStreetMap</a> contributors';
+
 /* ---------------- Bloc 2 : Géolocalisation ---------------- */
 (function(){
   // DATA.geoloc ne contient que des pourcentages (prop_nb / prop_montant),
@@ -459,11 +463,9 @@ const fmt2 = new Intl.NumberFormat('fr-FR',{maximumFractionDigits:2,minimumFract
 /* ---------------- Bloc 4b : Carte par province (choroplèthe) ---------------- */
 (function(){
   const map = L.map('regionMap',{scrollWheelZoom:false}).setView([13.4,18.9],5.6);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',{
-    attribution:'&copy; OpenStreetMap &copy; CARTO', maxZoom:9
+  L.tileLayer(JAWG_TILE_URL,{
+    attribution: JAWG_ATTRIBUTION, maxZoom:22
   }).addTo(map);
-
-  const values = DATA.geojson.features.map(f=>f.properties.prop_volume_total);
   const minV = Math.min(...values), maxV = Math.max(...values);
   function colorFor(v){
     const t = (Math.log(v+1)-Math.log(minV+1))/(Math.log(maxV+1)-Math.log(minV+1));
@@ -477,7 +479,7 @@ const fmt2 = new Intl.NumberFormat('fr-FR',{maximumFractionDigits:2,minimumFract
 
   const layer = L.geoJSON(DATA.geojson,{
     style:f=>({
-      fillColor: colorFor(f.properties.volume_total_millions),
+      fillColor: colorFor(f.properties.prop_volume_total),
       fillOpacity:0.88,
       color:'#F0F2F1',
       weight:1
@@ -511,8 +513,8 @@ const fmt2 = new Intl.NumberFormat('fr-FR',{maximumFractionDigits:2,minimumFract
   const map = L.map('flowMap',{scrollWheelZoom:false, zoomSnap:0.1}).setView([13.4,18.9],5.6);
 
   // Fond de carte (identique à la carte des volumes), puis découpage administratif par-dessus
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',{
-    attribution:'&copy; OpenStreetMap &copy; CARTO', maxZoom:9
+  L.tileLayer(JAWG_TILE_URL,{
+    attribution: JAWG_ATTRIBUTION, maxZoom:22
   }).addTo(map);
 
   const bgLayer = L.geoJSON(DATA.geojson,{
